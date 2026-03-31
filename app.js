@@ -521,6 +521,25 @@ function setupSettingsModal() {
     syncCanvas();
   });
 
+  document.getElementById('settings-phone-link').addEventListener('click', () => {
+    const url   = LS.get(KEYS.URL)   || '';
+    const token = LS.get(KEYS.TOKEN) || '';
+    if (!url || !token) {
+      alert('No Canvas credentials saved yet.');
+      return;
+    }
+    const payload = btoa(JSON.stringify({ url, token }));
+    const link = `${location.origin}${location.pathname}#setup=${payload}`;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('settings-phone-link');
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    }).catch(() => {
+      prompt('Copy this link and send it to your phone:', link);
+    });
+  });
+
   clearBtn.addEventListener('click', () => {
     if (confirm('Delete all data and reset the app?')) {
       Object.values(KEYS).forEach(k => LS.remove(k));
@@ -722,6 +741,21 @@ function initSetup() {
   const urlInput  = document.getElementById('canvas-url');
   const tokenInput = document.getElementById('canvas-token');
   const connectBtn = document.getElementById('connect-btn');
+
+  // Auto-connect if a phone setup link was opened (e.g. #setup=base64...)
+  const hash = location.hash;
+  if (hash.startsWith('#setup=')) {
+    try {
+      const { url, token } = JSON.parse(atob(hash.slice(7)));
+      if (url && token) {
+        LS.set(KEYS.URL,   url.replace(/\/+$/, ''));
+        LS.set(KEYS.TOKEN, token);
+        history.replaceState(null, '', location.pathname); // clean up URL
+        initDashboard();
+        return;
+      }
+    } catch { /* malformed hash — fall through to normal setup */ }
+  }
 
   // Error element (injected dynamically)
   let errEl = null;

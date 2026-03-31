@@ -410,6 +410,20 @@ body {
   100% { left: 160%; }
 }
 
+/* Phone link variant */
+.cta.cta-phone {
+  background: transparent;
+  color: var(--p);
+  border: 1px solid var(--p);
+  box-shadow: none;
+  margin-top: 8px;
+}
+
+.cta.cta-phone:hover {
+  background: var(--p-dim);
+  box-shadow: 0 0 20px var(--p-glow-s);
+}
+
 /* Danger variant */
 .cta.cta-danger {
   background: var(--red);
