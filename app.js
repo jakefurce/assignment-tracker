@@ -9,6 +9,7 @@ let autoSyncInterval    = null;
 let scheduledNotifIds   = [];
 let starfieldSetup      = null;  // { stop() } handle for setup screen starfield
 let starfieldDash       = null;  // { stop() } handle for dashboard starfield
+let isSyncing           = false;
 
 // ── LocalStorage helpers ──
 const LS = {
@@ -297,14 +298,16 @@ function buildCard(assignment, isOverdue) {
       <div class="card-course">${escapeHTML(assignment.course || '')}</div>
     </div>
     <div class="card-right">
-      <span class="countdown${isOverdue ? ' od' : (diffD < 3 ? ' urgent' : '')}" data-due="${assignment.dueDate}">${initialCountdown}</span>
+      <span class="countdown${isOverdue ? ' od' : (diffD < 3 ? ' urgent' : '')}" data-due="${escapeHTML(assignment.dueDate)}">${initialCountdown}</span>
       <span class="src ${srcClass}">${srcSVG}</span>
     </div>`;
 
   // Click to open Canvas URL
   if (assignment.url) {
     card.addEventListener('click', () => {
-      window.open(assignment.url, '_blank', 'noopener');
+      if (assignment.url && assignment.url.startsWith('https://')) {
+        window.open(assignment.url, '_blank', 'noopener,noreferrer');
+      }
     });
   }
 
@@ -545,9 +548,12 @@ function setSyncing(active) {
 }
 
 async function syncCanvas() {
-  const url   = LS.get(KEYS.URL);
+  if (isSyncing) return;
+  isSyncing = true;
+
+  const url   = (LS.get(KEYS.URL) || '').replace(/\/+$/, '');
   const token = LS.get(KEYS.TOKEN);
-  if (!url || !token) return;
+  if (!url || !token) { isSyncing = false; return; }
 
   setSyncing(true);
 
@@ -557,6 +563,7 @@ async function syncCanvas() {
       `${url}/api/v1/courses?enrollment_state=active&per_page=50`,
       token
     );
+    if (!Array.isArray(courses)) throw new Error('Unexpected API response for courses');
 
     // For each course, fetch upcoming assignments
     const assignments = [];
@@ -571,6 +578,7 @@ async function syncCanvas() {
         // Skip courses that fail (e.g., concluded with no assignments endpoint)
         continue;
       }
+      if (!Array.isArray(items)) continue;
       for (const item of items) {
         if (!item.due_at) continue;
         assignments.push({
@@ -593,6 +601,7 @@ async function syncCanvas() {
     console.error('Canvas sync failed:', err);
   } finally {
     setSyncing(false);
+    isSyncing = false;
   }
 }
 
@@ -614,6 +623,8 @@ function updateLastSynced() {
 }
 
 // ── Notifications ──
+const MAX_TIMEOUT = 2147483647;
+
 async function requestNotificationPermission() {
   if (typeof Notification === 'undefined') return;
   if (Notification.permission === 'default') {
@@ -643,10 +654,11 @@ function scheduleNotifications(assignments) {
 
     // 1 day before
     const oneDayBefore = due - 86400000;
-    if (oneDayBefore > now) {
+    const delayOneDayBefore = oneDayBefore - now;
+    if (delayOneDayBefore > 0 && delayOneDayBefore < MAX_TIMEOUT) {
       const id = setTimeout(() => {
         showNotification(`Due tomorrow: ${a.name}`, a.course);
-      }, oneDayBefore - now);
+      }, delayOneDayBefore);
       scheduledNotifIds.push(id);
     }
 
@@ -658,10 +670,11 @@ function scheduleNotifications(assignments) {
       dueDate.getDate(),
       7, 0, 0
     ).getTime();
-    if (morningOf > now) {
+    const delayMorningOf = morningOf - now;
+    if (delayMorningOf > 0 && delayMorningOf < MAX_TIMEOUT) {
       const id = setTimeout(() => {
         showNotification(`Due today: ${a.name}`, a.course);
-      }, morningOf - now);
+      }, delayMorningOf);
       scheduledNotifIds.push(id);
     }
   });
@@ -687,8 +700,9 @@ function initDashboard() {
   if (autoSyncInterval) clearInterval(autoSyncInterval);
   autoSyncInterval = setInterval(syncCanvas, 30 * 60 * 1000);
 
-  // 8. Update footer last-synced text
+  // 8. Update footer last-synced text (and keep it fresh every 60s)
   updateLastSynced();
+  setInterval(() => updateLastSynced(), 60000);
 
   // 9. Request notification permission once
   requestNotificationPermission();
@@ -734,7 +748,7 @@ function initSetup() {
       showSetupError('Both fields are required.');
       return;
     }
-    if (!/^https?:\/\/.+/.test(canvasUrl)) {
+    if (!/^https:\/\/.+/.test(canvasUrl)) {
       showSetupError('Canvas URL must start with https://');
       return;
     }
@@ -752,8 +766,8 @@ function initSetup() {
       return;
     }
 
-    // Save to localStorage
-    LS.set(KEYS.URL,   canvasUrl);
+    // Save to localStorage (normalize trailing slash)
+    LS.set(KEYS.URL,   canvasUrl.replace(/\/+$/, ''));
     LS.set(KEYS.TOKEN, token);
 
     // Request notification permission right after successful connect
