@@ -221,19 +221,23 @@ function initStarfield(canvasEl) {
 }
 
 // ── API ──
-// Uses ?access_token= query param instead of Authorization header to avoid
-// CORS preflight (OPTIONS) requests, which many Canvas instances block.
+// All Canvas calls go through the Cloudflare proxy to handle CORS.
+const PROXY_URL = 'https://canvas-proxy.jcfurce.workers.dev';
+
 async function apiFetch(url, token) {
-  const sep = url.includes('?') ? '&' : '?';
-  const res = await fetch(`${url}${sep}access_token=${encodeURIComponent(token)}`);
+  const canvasBase = LS.get(KEYS.URL) || '';
+  const proxied = canvasBase ? url.replace(canvasBase, PROXY_URL) : url;
+  const res = await fetch(proxied, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
   if (!res.ok) throw new Error(`API error ${res.status}`);
   return res.json();
 }
 
 async function testConnection(canvasUrl, token) {
-  const res = await fetch(
-    `${canvasUrl}/api/v1/users/self?access_token=${encodeURIComponent(token)}`
-  );
+  const res = await fetch(`${PROXY_URL}/api/v1/users/self`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return true;
 }
