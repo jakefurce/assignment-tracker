@@ -753,6 +753,9 @@ function initSetup() {
       return;
     }
 
+    // Normalize trailing slash before any use
+    canvasUrl = canvasUrl.replace(/\/+$/, '');
+
     // Disable button while connecting
     connectBtn.disabled = true;
     connectBtn.textContent = 'Connecting\u2026';
@@ -766,8 +769,8 @@ function initSetup() {
       return;
     }
 
-    // Save to localStorage (normalize trailing slash)
-    LS.set(KEYS.URL,   canvasUrl.replace(/\/+$/, ''));
+    // Save to localStorage
+    LS.set(KEYS.URL,   canvasUrl);
     LS.set(KEYS.TOKEN, token);
 
     // Request notification permission right after successful connect
