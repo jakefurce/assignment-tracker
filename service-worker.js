@@ -32,7 +32,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch event: network-first for API, cache-first for assets
+// Fetch event: network-first for same-origin requests, cache fallback on failure
 self.addEventListener('fetch', event => {
   const { request } = event;
 
