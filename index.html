@@ -104,26 +104,45 @@
       </div>
     </header>
 
-    <main id="dash-main">
-      <!-- Overdue section -->
-      <section id="overdue-section" aria-label="Overdue assignments">
-        <div class="sec-header">
-          <span class="sec-label od">OVERDUE</span>
-          <span class="sec-badge od" id="overdue-count">0</span>
-          <span class="sec-rule"></span>
-        </div>
-        <div class="cards" id="overdue-cards"></div>
-      </section>
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-upcoming" type="button">Upcoming</button>
+      <button class="tab-btn" id="tab-completed" type="button">Completed</button>
+    </div>
 
-      <!-- Upcoming section -->
-      <section id="upcoming-section" aria-label="Upcoming assignments">
-        <div class="sec-header">
-          <span class="sec-label up">UPCOMING</span>
-          <span class="sec-badge up" id="upcoming-count">0</span>
-          <span class="sec-rule"></span>
-        </div>
-        <div class="cards" id="upcoming-cards"></div>
-      </section>
+    <main id="dash-main">
+      <!-- Upcoming view -->
+      <div id="view-upcoming">
+        <section id="overdue-section" aria-label="Overdue assignments">
+          <div class="sec-header">
+            <span class="sec-label od">OVERDUE</span>
+            <span class="sec-badge od" id="overdue-count">0</span>
+            <span class="sec-rule"></span>
+          </div>
+          <div class="cards" id="overdue-cards"></div>
+        </section>
+
+        <section id="upcoming-section" aria-label="Upcoming assignments">
+          <div class="sec-header">
+            <span class="sec-label up">UPCOMING</span>
+            <span class="sec-badge up" id="upcoming-count">0</span>
+            <span class="sec-rule"></span>
+          </div>
+          <div class="cards" id="upcoming-cards"></div>
+        </section>
+      </div>
+
+      <!-- Completed view -->
+      <div id="view-completed" style="display:none">
+        <section aria-label="Completed assignments">
+          <div class="sec-header">
+            <span class="sec-label up">COMPLETED</span>
+            <span class="sec-badge up" id="completed-count">0</span>
+            <span class="sec-rule"></span>
+          </div>
+          <div class="cards" id="completed-cards"></div>
+        </section>
+      </div>
     </main>
 
     <footer class="dash-ftr">

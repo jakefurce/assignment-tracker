@@ -258,6 +258,76 @@ function dismissAssignment(id) {
   dismissed.add(String(id));
   LS.setJSON(KEYS.DISMISSED, [...dismissed]);
   renderDashboard();
+  renderCompleted();
+}
+
+function restoreAssignment(id) {
+  const dismissed = new Set(LS.getJSON(KEYS.DISMISSED) || []);
+  dismissed.delete(String(id));
+  LS.setJSON(KEYS.DISMISSED, [...dismissed]);
+  renderDashboard();
+  renderCompleted();
+}
+
+function getDismissedAssignments() {
+  const canvas    = LS.getJSON(KEYS.CANVAS_DATA) || [];
+  const custom    = LS.getJSON(KEYS.CUSTOM) || [];
+  const dismissed = new Set(LS.getJSON(KEYS.DISMISSED) || []);
+  return [...canvas, ...custom]
+    .filter(a => dismissed.has(String(a.id)))
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+}
+
+function buildCompletedCard(assignment) {
+  const card = document.createElement('div');
+  card.className = 'card overdue';
+  card.dataset.id = assignment.id;
+
+  const due = new Date(assignment.dueDate);
+  const dateStr = due.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const canvasSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+  </svg>`;
+  const customSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>`;
+  const srcClass = assignment.type === 'canvas' ? 'canvas' : 'custom';
+  const srcSVG   = assignment.type === 'canvas' ? canvasSVG : customSVG;
+
+  card.innerHTML = `
+    <div class="strip grey"></div>
+    <button class="done-btn restore-btn" aria-label="Mark as incomplete" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+      </svg>
+    </button>
+    <div class="card-body">
+      <div class="card-name">${escapeHTML(assignment.name)}</div>
+      <div class="card-course">${escapeHTML(assignment.course || '')}</div>
+    </div>
+    <div class="card-right">
+      <span class="countdown od">${escapeHTML(dateStr)}</span>
+      <span class="src ${srcClass}">${srcSVG}</span>
+    </div>`;
+
+  card.querySelector('.restore-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    restoreAssignment(assignment.id);
+  });
+
+  return card;
+}
+
+function renderCompleted() {
+  const dismissed = getDismissedAssignments();
+  const container = document.getElementById('completed-cards');
+  const countEl   = document.getElementById('completed-count');
+  countEl.textContent = dismissed.length;
+  container.innerHTML = '';
+  dismissed.forEach(a => container.appendChild(buildCompletedCard(a)));
 }
 
 function buildCard(assignment, isOverdue) {
@@ -748,6 +818,22 @@ function initDashboard() {
 
   // 2–4. Load data and render
   renderDashboard();
+  renderCompleted();
+
+  // 2b. Tab switching
+  document.getElementById('tab-upcoming').addEventListener('click', () => {
+    document.getElementById('view-upcoming').style.display = '';
+    document.getElementById('view-completed').style.display = 'none';
+    document.getElementById('tab-upcoming').classList.add('active');
+    document.getElementById('tab-completed').classList.remove('active');
+  });
+  document.getElementById('tab-completed').addEventListener('click', () => {
+    document.getElementById('view-upcoming').style.display = 'none';
+    document.getElementById('view-completed').style.display = '';
+    document.getElementById('tab-upcoming').classList.remove('active');
+    document.getElementById('tab-completed').classList.add('active');
+    renderCompleted();
+  });
 
   // 5. Live countdown timer
   startCountdownTimer();

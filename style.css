@@ -862,6 +862,49 @@ body {
   stroke-width: 1.7;
 }
 
+/* ── Tab bar ── */
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.6);
+  position: sticky;
+  top: 52px;
+  z-index: 9;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  font-family: var(--fb);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 180ms, border-color 180ms;
+}
+
+.tab-btn.active {
+  color: var(--p);
+  border-bottom-color: var(--p);
+  text-shadow: 0 0 12px var(--p-glow-s);
+}
+
+.tab-btn:hover:not(.active) {
+  color: var(--text-2);
+}
+
+/* Restore (undo) button — same shape as done-btn, different hover color */
+.restore-btn:hover {
+  border-color: var(--p);
+  color: var(--p);
+  background: var(--p-dim);
+}
+
 /* ── Dashboard footer ── */
 .dash-ftr {
   position: sticky;
