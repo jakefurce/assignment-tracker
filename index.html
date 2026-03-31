@@ -16,7 +16,7 @@
        Shown on first visit (no token in localStorage)
   ══════════════════════════════════ -->
   <div id="setup-screen">
-    <canvas id="star-canvas"></canvas>
+    <canvas id="star-canvas" aria-hidden="true"></canvas>
     <div class="glow-bottom" aria-hidden="true"></div>
     <div class="glow-top"    aria-hidden="true"></div>
     <div class="light-bar"   aria-hidden="true"></div>
@@ -74,7 +74,7 @@
        Main view shown after setup
   ══════════════════════════════════ -->
   <div id="dashboard-screen" hidden>
-    <canvas id="dash-star-canvas"></canvas>
+    <canvas id="dash-star-canvas" aria-hidden="true"></canvas>
     <div class="glow-bottom" aria-hidden="true"></div>
     <div class="glow-top"    aria-hidden="true"></div>
     <div class="light-bar"   aria-hidden="true"></div>
@@ -89,7 +89,7 @@
             <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
           </svg>
         </button>
-        <button class="add-btn" id="add-btn" type="button">
+        <button class="add-btn" id="add-btn" type="button" aria-label="Add assignment">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           Add
         </button>
@@ -104,7 +104,7 @@
 
     <main id="dash-main">
       <!-- Overdue section -->
-      <section id="overdue-section">
+      <section id="overdue-section" aria-label="Overdue assignments">
         <div class="sec-header">
           <span class="sec-label">OVERDUE</span>
           <span class="sec-badge" id="overdue-count">0</span>
@@ -114,7 +114,7 @@
       </section>
 
       <!-- Upcoming section -->
-      <section id="upcoming-section">
+      <section id="upcoming-section" aria-label="Upcoming assignments">
         <div class="sec-header">
           <span class="sec-label">UPCOMING</span>
           <span class="sec-badge" id="upcoming-count">0</span>
@@ -141,7 +141,7 @@
        ADD ASSIGNMENT MODAL
   ══════════════════════════════════ -->
   <div id="add-modal" hidden aria-modal="true" role="dialog" aria-labelledby="add-modal-title">
-    <div id="modal-overlay"></div>
+    <div class="modal-overlay"></div>
     <div class="modal-card">
       <div class="modal-hdr">
         <h2 class="modal-title" id="add-modal-title">Add Assignment</h2>
@@ -242,7 +242,7 @@
     // Register service worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('/service-worker.js')
+        navigator.serviceWorker.register('./service-worker.js')
           .catch(function (err) {
             console.warn('Service worker registration failed:', err);
           });
