@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assignment Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════
+       SETUP SCREEN
+       Shown on first visit (no token in localStorage)
+  ══════════════════════════════════ -->
+  <div id="setup-screen">
+    <canvas id="star-canvas"></canvas>
+    <div class="glow-bottom" aria-hidden="true"></div>
+    <div class="glow-top"    aria-hidden="true"></div>
+    <div class="light-bar"   aria-hidden="true"></div>
+    <div class="scan-line"   aria-hidden="true"></div>
+
+    <div class="setup-inner">
+      <div class="logo-wrap">
+        <div class="logo-ring" aria-hidden="true"></div>
+        <div class="logo-inner">
+          <!-- Checklist icon with purple circle checkmark -->
+          <svg viewBox="0 0 26 26" fill="none" aria-hidden="true">
+            <path d="M4 6.5h18M4 12.5h11M4 18.5h14"
+              stroke="rgba(255,255,255,0.65)" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="20.5" cy="18.5" r="4" stroke="#A855F7" stroke-width="1.5" fill="rgba(168,85,247,0.08)"/>
+            <path d="M19.1 18.5l1.2 1.2 2-2.4" stroke="#A855F7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <h1 class="setup-title">Assignment Tracker<span class="dot">.</span></h1>
+      <p class="setup-sub">Connect your Canvas account to track all your upcoming deadlines in one place.</p>
+
+      <div class="setup-card" id="setup-form">
+        <div class="f-group">
+          <label class="f-label" for="canvas-url">Canvas URL</label>
+          <input
+            class="f-input"
+            id="canvas-url"
+            type="url"
+            placeholder="https://canvas.youruniversity.edu"
+            autocomplete="url"
+          />
+        </div>
+        <div class="f-group">
+          <label class="f-label" for="canvas-token">API Access Token</label>
+          <input
+            class="f-input"
+            id="canvas-token"
+            type="password"
+            placeholder="Paste your access token"
+            autocomplete="off"
+          />
+          <p class="f-hint">Stored only on your device. Never shared anywhere.</p>
+        </div>
+        <button class="cta" id="connect-btn" type="button">CONNECT TO CANVAS</button>
+      </div>
+
+      <a class="token-link" href="#" id="token-help-link">How do I get an access token? &rarr;</a>
+    </div>
+  </div><!-- end #setup-screen -->
+
+
+  <!-- ══════════════════════════════════
+       DASHBOARD SCREEN
+       Main view shown after setup
+  ══════════════════════════════════ -->
+  <div id="dashboard-screen" hidden>
+    <canvas id="dash-star-canvas"></canvas>
+    <div class="glow-bottom" aria-hidden="true"></div>
+    <div class="glow-top"    aria-hidden="true"></div>
+    <div class="light-bar"   aria-hidden="true"></div>
+    <div class="scan-line"   aria-hidden="true"></div>
+
+    <header class="dash-hdr">
+      <div class="wordmark">Tracker<span class="dot">.</span></div>
+      <div class="hdr-r">
+        <button class="icon-btn" id="sync-btn" aria-label="Sync" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+            <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+          </svg>
+        </button>
+        <button class="add-btn" id="add-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Add
+        </button>
+        <button class="icon-btn" id="settings-btn" aria-label="Settings" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="dash-main">
+      <!-- Overdue section -->
+      <section id="overdue-section">
+        <div class="sec-header">
+          <span class="sec-label">OVERDUE</span>
+          <span class="sec-badge" id="overdue-count">0</span>
+          <span class="sec-rule"></span>
+        </div>
+        <div class="cards" id="overdue-cards"></div>
+      </section>
+
+      <!-- Upcoming section -->
+      <section id="upcoming-section">
+        <div class="sec-header">
+          <span class="sec-label">UPCOMING</span>
+          <span class="sec-badge" id="upcoming-count">0</span>
+          <span class="sec-rule"></span>
+        </div>
+        <div class="cards" id="upcoming-cards"></div>
+      </section>
+    </main>
+
+    <footer class="dash-ftr">
+      <span id="last-synced">Last synced: never</span>
+      <button id="footer-sync-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+          <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+        </svg>
+        SYNC NOW
+      </button>
+    </footer>
+  </div><!-- end #dashboard-screen -->
+
+
+  <!-- ══════════════════════════════════
+       ADD ASSIGNMENT MODAL
+  ══════════════════════════════════ -->
+  <div id="add-modal" hidden aria-modal="true" role="dialog" aria-labelledby="add-modal-title">
+    <div id="modal-overlay"></div>
+    <div class="modal-card">
+      <div class="modal-hdr">
+        <h2 class="modal-title" id="add-modal-title">Add Assignment</h2>
+        <button class="modal-close-btn" id="modal-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <form id="add-form" novalidate>
+        <div class="f-group">
+          <label class="f-label" for="add-name">Assignment Name</label>
+          <input
+            class="f-input"
+            id="add-name"
+            type="text"
+            placeholder="Assignment name"
+            required
+            autocomplete="off"
+          />
+        </div>
+        <div class="f-group">
+          <label class="f-label" for="add-course">Course Name</label>
+          <input
+            class="f-input"
+            id="add-course"
+            type="text"
+            placeholder="Course name"
+            autocomplete="off"
+          />
+        </div>
+        <div class="f-group">
+          <label class="f-label" for="add-due">Due Date &amp; Time</label>
+          <input
+            class="f-input"
+            id="add-due"
+            type="datetime-local"
+            required
+          />
+        </div>
+        <button class="cta" type="submit">ADD ASSIGNMENT</button>
+      </form>
+    </div>
+  </div><!-- end #add-modal -->
+
+
+  <!-- ══════════════════════════════════
+       SETTINGS MODAL
+  ══════════════════════════════════ -->
+  <div id="settings-modal" hidden aria-modal="true" role="dialog" aria-labelledby="settings-modal-title">
+    <div class="modal-overlay"></div>
+    <div class="modal-card">
+      <div class="modal-hdr">
+        <h2 class="modal-title" id="settings-modal-title">Settings</h2>
+        <button class="modal-close-btn" id="settings-close" type="button" aria-label="Close">&times;</button>
+      </div>
+      <form id="settings-form" novalidate>
+        <div class="f-group">
+          <label class="f-label" for="settings-url">Canvas URL</label>
+          <input
+            class="f-input"
+            id="settings-url"
+            type="url"
+            placeholder="https://canvas.youruniversity.edu"
+            autocomplete="url"
+          />
+        </div>
+        <div class="f-group">
+          <label class="f-label" for="settings-token">API Access Token</label>
+          <input
+            class="f-input"
+            id="settings-token"
+            type="password"
+            placeholder="Paste your access token"
+            autocomplete="off"
+          />
+        </div>
+        <button class="cta" id="settings-save" type="submit">Save Changes</button>
+        <button class="cta cta-danger" id="settings-clear" type="button">Clear All Data</button>
+      </form>
+    </div>
+  </div><!-- end #settings-modal -->
+
+
+  <!-- Card template (built by JS):
+  <div class="card ug-[red|orange|green]" data-id="..." data-url="...">
+    <div class="strip [red|orange|green]"></div>
+    <div class="card-body">
+      <div class="card-name">Assignment name</div>
+      <div class="card-course">Course — Section</div>
+    </div>
+    <div class="card-right">
+      <span class="countdown">[timer]</span>
+      <span class="src [canvas|custom]">[SVG icon]</span>
+    </div>
+  </div>
+  -->
+
+  <script src="app.js" defer></script>
+
+  <script>
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/service-worker.js')
+          .catch(function (err) {
+            console.warn('Service worker registration failed:', err);
+          });
+      });
+    }
+  </script>
+</body>
+</html>
