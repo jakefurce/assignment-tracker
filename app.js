@@ -742,21 +742,6 @@ function initSetup() {
   const tokenInput = document.getElementById('canvas-token');
   const connectBtn = document.getElementById('connect-btn');
 
-  // Auto-connect if a phone setup link was opened (e.g. #setup=base64...)
-  const hash = location.hash;
-  if (hash.startsWith('#setup=')) {
-    try {
-      const { url, token } = JSON.parse(atob(hash.slice(7)));
-      if (url && token) {
-        LS.set(KEYS.URL,   url.replace(/\/+$/, ''));
-        LS.set(KEYS.TOKEN, token);
-        history.replaceState(null, '', location.pathname); // clean up URL
-        initDashboard();
-        return;
-      }
-    } catch { /* malformed hash — fall through to normal setup */ }
-  }
-
   // Error element (injected dynamically)
   let errEl = null;
 
@@ -831,6 +816,19 @@ function initSetup() {
 
 // ── Init (entry point) ──
 function init() {
+  // Handle phone setup link: #setup=base64encodedJSON
+  const hash = location.hash;
+  if (hash.startsWith('#setup=')) {
+    try {
+      const { url, token } = JSON.parse(atob(hash.slice(7)));
+      if (url && token) {
+        LS.set(KEYS.URL,   url.replace(/\/+$/, ''));
+        LS.set(KEYS.TOKEN, token);
+        history.replaceState(null, '', location.pathname);
+      }
+    } catch { /* malformed hash — ignore */ }
+  }
+
   const hasToken = LS.get(KEYS.TOKEN);
 
   if (!hasToken) {
