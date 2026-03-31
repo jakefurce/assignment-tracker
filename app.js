@@ -26,6 +26,7 @@ const KEYS = {
   CUSTOM:       'at_custom',
   LAST_SYNCED:  'at_last_synced',
   CANVAS_DATA:  'at_canvas_assignments',
+  DISMISSED:    'at_dismissed', // set of assignment IDs marked complete
 };
 
 // ── Starfield ──
@@ -244,11 +245,19 @@ async function testConnection(canvasUrl, token) {
 
 // ── Render ──
 function getMergedAssignments() {
-  const canvas = LS.getJSON(KEYS.CANVAS_DATA) || [];
-  const custom = LS.getJSON(KEYS.CUSTOM) || [];
-  return [...canvas, ...custom].sort(
-    (a, b) => new Date(a.dueDate) - new Date(b.dueDate)
-  );
+  const canvas    = LS.getJSON(KEYS.CANVAS_DATA) || [];
+  const custom    = LS.getJSON(KEYS.CUSTOM) || [];
+  const dismissed = new Set(LS.getJSON(KEYS.DISMISSED) || []);
+  return [...canvas, ...custom]
+    .filter(a => !dismissed.has(String(a.id)))
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+}
+
+function dismissAssignment(id) {
+  const dismissed = new Set(LS.getJSON(KEYS.DISMISSED) || []);
+  dismissed.add(String(id));
+  LS.setJSON(KEYS.DISMISSED, [...dismissed]);
+  renderDashboard();
 }
 
 function buildCard(assignment, isOverdue) {
@@ -298,6 +307,11 @@ function buildCard(assignment, isOverdue) {
 
   card.innerHTML = `
     <div class="strip ${stripClass}"></div>
+    <button class="done-btn" aria-label="Mark as done" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </button>
     <div class="card-body">
       <div class="card-name">${escapeHTML(assignment.name)}</div>
       <div class="card-course">${escapeHTML(assignment.course || '')}</div>
@@ -307,9 +321,20 @@ function buildCard(assignment, isOverdue) {
       <span class="src ${srcClass}">${srcSVG}</span>
     </div>`;
 
-  // Click to open Canvas URL
+  // Checkmark button
+  card.querySelector('.done-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    dismissAssignment(assignment.id);
+  });
+
+  // Click card body to open Canvas URL
   if (assignment.url) {
-    card.addEventListener('click', () => {
+    card.querySelector('.card-body').addEventListener('click', () => {
+      if (assignment.url && assignment.url.startsWith('https://')) {
+        window.open(assignment.url, '_blank', 'noopener,noreferrer');
+      }
+    });
+    card.querySelector('.card-right').addEventListener('click', () => {
       if (assignment.url && assignment.url.startsWith('https://')) {
         window.open(assignment.url, '_blank', 'noopener,noreferrer');
       }
@@ -699,6 +724,16 @@ function scheduleNotifications(assignments) {
       const id = setTimeout(() => {
         showNotification(`Due today: ${a.name}`, a.course);
       }, delayMorningOf);
+      scheduledNotifIds.push(id);
+    }
+
+    // 1 hour before
+    const oneHourBefore = due - 3600000;
+    const delayOneHour  = oneHourBefore - now;
+    if (delayOneHour > 0 && delayOneHour < MAX_TIMEOUT) {
+      const id = setTimeout(() => {
+        showNotification(`Due in 1 hour: ${a.name}`, a.course);
+      }, delayOneHour);
       scheduledNotifIds.push(id);
     }
   });

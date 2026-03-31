@@ -636,12 +636,12 @@ body {
 
 .card {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 3px;
   overflow: hidden;
-  cursor: pointer;
+  cursor: default;
   transition: border-color 200ms, background 200ms, box-shadow 200ms, transform 150ms;
   animation: card-in 360ms ease-out both;
   box-shadow: 0 4px 18px rgba(168,85,247,0.05);
@@ -701,6 +701,7 @@ body {
   align-self: stretch;
   flex-shrink: 0;
   border-radius: 1px 0 0 1px;
+  min-height: 48px;
 }
 
 .strip.red {
@@ -733,6 +734,7 @@ body {
   flex: 1;
   padding: 12px 10px 12px 14px;
   min-width: 0;
+  cursor: pointer;
 }
 
 .card-name {
@@ -815,6 +817,34 @@ body {
   text-shadow:
     0 0 20px rgba(255,107,107,1),
     0 0 45px rgba(239,68,68,0.65);
+}
+
+/* Done / complete button */
+.done-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: rgba(255,255,255,0.25);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 180ms, color 180ms, background 180ms;
+  margin-right: 10px;
+}
+
+.done-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.done-btn:hover {
+  border-color: #10B981;
+  color: #10B981;
+  background: rgba(16,185,129,0.1);
 }
 
 /* Source icon */
