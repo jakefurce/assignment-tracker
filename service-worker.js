@@ -1,6 +1,6 @@
 // Assignment Tracker — Service Worker
 
-const CACHE_NAME = 'assignment-tracker-v1';
+const CACHE_NAME = 'assignment-tracker-v2';
 const CACHED_FILES = [
   './',
   './index.html',
