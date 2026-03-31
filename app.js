@@ -740,7 +740,7 @@ function initSetup() {
     e.preventDefault();
     clearSetupError();
 
-    const canvasUrl = urlInput.value.trim();
+    let canvasUrl = urlInput.value.trim();
     const token     = tokenInput.value.trim();
 
     // Validate non-empty + looks like a URL
