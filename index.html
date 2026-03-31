@@ -11,6 +11,8 @@
 </head>
 <body>
 
+  <div class="shell">
+
   <!-- ══════════════════════════════════
        SETUP SCREEN
        Shown on first visit (no token in localStorage)
@@ -106,8 +108,8 @@
       <!-- Overdue section -->
       <section id="overdue-section" aria-label="Overdue assignments">
         <div class="sec-header">
-          <span class="sec-label">OVERDUE</span>
-          <span class="sec-badge" id="overdue-count">0</span>
+          <span class="sec-label od">OVERDUE</span>
+          <span class="sec-badge od" id="overdue-count">0</span>
           <span class="sec-rule"></span>
         </div>
         <div class="cards" id="overdue-cards"></div>
@@ -116,8 +118,8 @@
       <!-- Upcoming section -->
       <section id="upcoming-section" aria-label="Upcoming assignments">
         <div class="sec-header">
-          <span class="sec-label">UPCOMING</span>
-          <span class="sec-badge" id="upcoming-count">0</span>
+          <span class="sec-label up">UPCOMING</span>
+          <span class="sec-badge up" id="upcoming-count">0</span>
           <span class="sec-rule"></span>
         </div>
         <div class="cards" id="upcoming-cards"></div>
@@ -136,6 +138,7 @@
     </footer>
   </div><!-- end #dashboard-screen -->
 
+  </div><!-- end .shell -->
 
   <!-- ══════════════════════════════════
        ADD ASSIGNMENT MODAL
