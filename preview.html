@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assignment Tracker — Design Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* Purple accent — replaces gold */
+      --p:        #A855F7;
+      --p-bright: #C084FC;
+      --p-deep:   #7C3AED;
+      --p-glow:   rgba(168,85,247,0.70);
+      --p-glow-s: rgba(168,85,247,0.35);
+      --p-dim:    rgba(168,85,247,0.11);
+      --p-border: rgba(168,85,247,0.38);
+
+      /* B&W */
+      --border:    rgba(255,255,255,0.07);
+      --border-hi: rgba(255,255,255,0.16);
+      --surface:   rgba(255,255,255,0.025);
+      --text-1:    #FFFFFF;
+      --text-2:    #8A93A3;
+      --text-3:    #454F62;
+
+      /* Urgency */
+      --red:   #EF4444;
+      --orange:#F97316;
+      --green: #10B981;
+
+      --fh: 'Space Grotesk', sans-serif;
+      --fb: 'DM Sans', sans-serif;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse 65% 28% at 50% 108%, rgba(124,58,237,0.09) 0%, transparent 70%),
+        #000;
+      font-family: var(--fb);
+      color: var(--text-1);
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 32px 16px 80px;
+    }
+
+    /* ── Preview meta ── */
+    .meta {
+      width: 100%; max-width: 460px; margin-bottom: 24px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .meta-lbl {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--text-3);
+    }
+    .meta-tabs {
+      display: flex; gap: 2px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: 3px; padding: 3px;
+    }
+    .ptab {
+      padding: 7px 22px; border: none; border-radius: 2px;
+      background: transparent; font-family: var(--fb);
+      font-size: 12px; font-weight: 500; color: var(--text-3);
+      cursor: pointer; transition: color 150ms, background 150ms;
+    }
+    .ptab.active { background: rgba(255,255,255,0.06); color: var(--text-1); }
+    .ptab:hover:not(.active) { color: var(--text-2); }
+
+    /* ── App shell ── */
+    .shell {
+      width: 100%; max-width: 460px; min-height: 760px;
+      background: transparent;
+      border: 1px solid var(--border); border-radius: 6px;
+      overflow: hidden; position: relative;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.025),
+        0 30px 80px rgba(0,0,0,0.9),
+        0 50px 120px rgba(124,58,237,0.08),
+        0 80px 180px rgba(168,85,247,0.04);
+    }
+
+    #star-canvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0; pointer-events: none;
+    }
+
+    /* Purple underglow rises from bottom */
+    .glow-bottom {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 280px;
+      background: linear-gradient(to top,
+        rgba(124,58,237,0.16) 0%,
+        rgba(168,85,247,0.07) 35%,
+        transparent 100%);
+      z-index: 1; pointer-events: none;
+    }
+    /* White/purple glow falls from top */
+    .glow-top {
+      position: absolute; top: 0; left: 0; right: 0; height: 160px;
+      background: linear-gradient(to bottom,
+        rgba(168,85,247,0.06) 0%,
+        rgba(255,255,255,0.02) 40%,
+        transparent 100%);
+      z-index: 1; pointer-events: none;
+    }
+    /* Purple light bar above footer */
+    .light-bar {
+      position: absolute; bottom: 58px; left: 8%; right: 8%; height: 1px;
+      background: linear-gradient(90deg,
+        transparent,
+        rgba(168,85,247,0.5) 25%,
+        rgba(255,255,255,0.4) 50%,
+        rgba(168,85,247,0.5) 75%,
+        transparent);
+      box-shadow:
+        0 0 12px rgba(168,85,247,0.5),
+        0 -8px 32px rgba(168,85,247,0.15),
+        0  4px 20px rgba(168,85,247,0.1);
+      z-index: 1; pointer-events: none;
+      animation: bar-breathe 4s ease-in-out infinite alternate;
+    }
+    @keyframes bar-breathe {
+      from { opacity:0.55; } to { opacity:1; }
+    }
+    /* Scan line */
+    .scan-line {
+      position: absolute; left:0; right:0; height:2px;
+      z-index:6; pointer-events:none;
+      background: linear-gradient(90deg,
+        transparent 0%, rgba(168,85,247,0.04) 20%,
+        rgba(168,85,247,0.1) 50%,
+        rgba(168,85,247,0.04) 80%, transparent 100%);
+      animation: scan 14s ease-in-out infinite; opacity:0;
+    }
+    @keyframes scan {
+      0%   { top:0%;   opacity:0; }
+      3%   { opacity:1; }
+      97%  { opacity:1; }
+      100% { top:101%; opacity:0; }
+    }
+
+    .screen {
+      display: none; flex-direction: column;
+      min-height: 760px; position: relative; z-index: 2;
+    }
+    .screen.active { display: flex; }
+
+    /* ══════════════════════════════════
+       SETUP SCREEN
+    ══════════════════════════════════ */
+    #s-setup {
+      align-items: center; justify-content: center;
+      padding: 52px 32px;
+    }
+
+    .logo-wrap { position: relative; width:52px; height:52px; margin-bottom:22px; }
+    .logo-ring {
+      position: absolute; inset: -4px; border-radius: 50%;
+      border: 1px solid transparent;
+      background: conic-gradient(from 0deg,
+        transparent 0%, rgba(168,85,247,0.8) 25%,
+        #C084FC 50%, rgba(168,85,247,0.8) 75%,
+        transparent 100%) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: destination-out; mask-composite: exclude;
+      animation: ring-spin 5s linear infinite;
+    }
+    @keyframes ring-spin { to { transform:rotate(360deg); } }
+    .logo-inner {
+      width:52px; height:52px;
+      background: rgba(168,85,247,0.06);
+      border: 1px solid rgba(168,85,247,0.25);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow:
+        0 0 0 1px rgba(168,85,247,0.1),
+        0 8px 30px rgba(168,85,247,0.18),
+        0 16px 50px rgba(168,85,247,0.08);
+    }
+    .logo-inner svg { width:26px; height:26px; }
+
+    /* Title — white with purple glow */
+    .setup-title {
+      font-family: var(--fh); font-size: 28px; font-weight: 700;
+      letter-spacing: -0.03em; color: var(--text-1); text-align: center;
+      margin-bottom: 2px;
+      text-shadow:
+        0 0 30px rgba(255,255,255,0.18),
+        0 0 60px rgba(168,85,247,0.12);
+    }
+    .setup-title .dot {
+      color: var(--p-bright);
+      text-shadow:
+        0 0 14px var(--p-glow),
+        0 0 30px var(--p-glow-s),
+        0 0 60px rgba(168,85,247,0.2);
+      animation: dot-pulse 3s ease-in-out infinite;
+    }
+    @keyframes dot-pulse {
+      0%,100% { text-shadow: 0 0 14px var(--p-glow), 0 0 30px var(--p-glow-s); }
+      50%     { text-shadow: 0 0 22px var(--p-glow), 0 0 50px rgba(168,85,247,0.5), 0 0 80px rgba(168,85,247,0.2); }
+    }
+
+    .setup-sub {
+      font-size: 13px; color: var(--text-2); text-align: center;
+      line-height: 1.7; margin-bottom: 36px; max-width: 270px;
+      text-shadow: 0 0 20px rgba(255,255,255,0.04);
+    }
+
+    .setup-card {
+      width: 100%;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      border-radius: 4px; padding: 28px;
+      position: relative;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.07),
+        0 0 0 1px rgba(168,85,247,0.04),
+        0 16px 50px rgba(168,85,247,0.1),
+        0 30px 80px rgba(124,58,237,0.06);
+    }
+    .setup-card::before {
+      content: '';
+      position: absolute; top:0; left:15%; right:15%; height:1px;
+      background: linear-gradient(90deg, transparent, rgba(168,85,247,0.4), rgba(255,255,255,0.2), rgba(168,85,247,0.4), transparent);
+    }
+
+    .f-group { margin-bottom: 18px; }
+    .f-label {
+      display: block; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 8px;
+    }
+    .f-input {
+      width: 100%;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: 3px;
+      padding: 11px 13px; font-family: var(--fb); font-size: 13px; color: var(--text-1);
+      outline: none; transition: border-color 200ms, box-shadow 200ms;
+    }
+    .f-input.focused {
+      border-color: rgba(168,85,247,0.45);
+      box-shadow:
+        0 0 0 2px rgba(168,85,247,0.08),
+        0 0 16px rgba(168,85,247,0.08),
+        0 8px 24px rgba(168,85,247,0.05);
+    }
+    .f-input::placeholder { color: var(--text-3); }
+    .f-hint { font-size:11px; color:var(--text-3); margin-top:6px; line-height:1.5; }
+
+    /* CTA — white with purple shimmer */
+    .cta {
+      position: relative; width: 100%; padding: 13px; margin-top: 6px;
+      border: none; border-radius: 0;
+      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+      background: var(--text-1);
+      font-family: var(--fh); font-size: 14px; font-weight: 700;
+      color: #000; letter-spacing: 0.05em;
+      cursor: pointer; overflow: hidden; transition: box-shadow 200ms;
+    }
+    .cta:hover {
+      box-shadow:
+        0 0 30px rgba(255,255,255,0.2),
+        0 12px 40px rgba(168,85,247,0.2),
+        0 20px 60px rgba(124,58,237,0.1);
+    }
+    .cta::after {
+      content: ''; position: absolute; top:0; left:-130%;
+      width:50%; height:100%;
+      background: linear-gradient(90deg, transparent, rgba(168,85,247,0.55), transparent);
+      transform: skewX(-15deg);
+      animation: cta-shine 3s ease-in-out 0.6s infinite;
+    }
+    @keyframes cta-shine {
+      0%  { left:-130%; } 55% { left:160%; } 100% { left:160%; }
+    }
+
+    .token-link {
+      display:block; text-align:center; margin-top:18px;
+      font-size:12px; color:var(--text-3); text-decoration:none;
+      transition: color 180ms;
+    }
+    .token-link:hover { color:var(--text-2); }
+
+    /* ══════════════════════════════════
+       DASHBOARD
+    ══════════════════════════════════ */
+    #s-dash { flex-direction: column; }
+
+    .hdr {
+      position: sticky; top:0; z-index:10;
+      padding: 14px 18px;
+      display: flex; align-items:center; justify-content:space-between;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid var(--border);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.05),
+        0 4px 30px rgba(168,85,247,0.07),
+        0 8px 50px rgba(124,58,237,0.04);
+    }
+
+    .wordmark {
+      font-family: var(--fh); font-size:18px; font-weight:700;
+      letter-spacing:-0.02em; color:var(--text-1);
+      display:flex; align-items:baseline;
+      text-shadow: 0 0 25px rgba(255,255,255,0.12), 0 0 50px rgba(168,85,247,0.06);
+    }
+    .wordmark .dot {
+      color: var(--p-bright); font-size:21px;
+      text-shadow: 0 0 14px var(--p-glow), 0 0 30px var(--p-glow-s);
+      animation: dot-pulse 3s ease-in-out infinite;
+    }
+
+    .hdr-r { display:flex; align-items:center; gap:2px; }
+
+    .icon-btn {
+      width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+      background:transparent; border:none; border-radius:2px;
+      color:var(--text-3); cursor:pointer;
+      transition: color 150ms, background 150ms;
+    }
+    .icon-btn:hover {
+      color:var(--text-1); background:rgba(255,255,255,0.05);
+      box-shadow: 0 0 16px rgba(168,85,247,0.08);
+    }
+    .icon-btn svg { width:16px; height:16px; stroke-width:1.7; }
+
+    .add-btn {
+      display:flex; align-items:center; gap:5px;
+      padding:6px 12px;
+      background: rgba(168,85,247,0.08);
+      border: 1px solid rgba(168,85,247,0.28); border-radius:2px;
+      font-family:var(--fb); font-size:12px; font-weight:600;
+      color:var(--p-bright); cursor:pointer;
+      transition: all 180ms;
+      text-shadow: 0 0 12px rgba(192,132,252,0.5);
+    }
+    .add-btn:hover {
+      background: rgba(168,85,247,0.14);
+      border-color: rgba(168,85,247,0.5);
+      box-shadow: 0 0 20px rgba(168,85,247,0.15), 0 8px 28px rgba(168,85,247,0.08);
+    }
+    .add-btn svg { width:12px; height:12px; stroke-width:2.5; }
+
+    /* Body */
+    .body {
+      flex:1; overflow-y:auto; padding-bottom:64px;
+      scrollbar-width:thin; scrollbar-color: rgba(168,85,247,0.15) transparent;
+    }
+
+    /* Sections */
+    .sec { display:flex; align-items:center; gap:10px; padding:20px 18px 9px; }
+    .sec-lbl {
+      font-family:var(--fh); font-size:10px; font-weight:600;
+      letter-spacing:0.14em; text-transform:uppercase;
+    }
+    .sec-lbl.od {
+      color: rgba(239,68,68,0.75);
+      text-shadow: 0 0 10px rgba(239,68,68,0.3);
+    }
+    .sec-lbl.up {
+      color: rgba(168,85,247,0.75);
+      text-shadow: 0 0 10px rgba(168,85,247,0.35);
+    }
+    .sec-badge {
+      font-family:var(--fh); font-size:10px; font-weight:700;
+      padding:1px 6px; border-radius:2px; letter-spacing:0.03em;
+    }
+    .sec-badge.od {
+      background:rgba(239,68,68,0.1); color:var(--red);
+      border:1px solid rgba(239,68,68,0.2);
+    }
+    .sec-badge.up {
+      background: var(--p-dim); color: var(--p-bright);
+      border:1px solid rgba(168,85,247,0.22);
+      text-shadow: 0 0 10px var(--p-glow-s);
+    }
+    .sec-rule { flex:1; height:1px; background:var(--border); }
+
+    /* Cards */
+    .cards { padding:0 10px; display:flex; flex-direction:column; gap:3px; }
+
+    .card {
+      display:flex; align-items:stretch;
+      background: var(--surface);
+      border:1px solid var(--border); border-radius:3px;
+      overflow:hidden; cursor:pointer;
+      transition: border-color 200ms, background 200ms, box-shadow 200ms, transform 150ms;
+      animation: card-in 360ms ease-out both;
+    }
+
+    /* Urgency-matched underglows */
+    .card             { box-shadow: 0 4px 18px rgba(168,85,247,0.05); }
+    .card.ug-red      { box-shadow: 0 4px 18px rgba(239,68,68,0.10); }
+    .card.ug-orange   { box-shadow: 0 4px 18px rgba(249,115,22,0.08); }
+    .card.ug-green    { box-shadow: 0 4px 16px rgba(16,185,129,0.07); }
+
+    .card:hover {
+      border-color: var(--border-hi);
+      background: rgba(255,255,255,0.042);
+      transform: translateY(-1px);
+    }
+    .card:not(.ug-red):not(.ug-orange):not(.ug-green):not(.overdue):hover {
+      box-shadow: 0 8px 32px rgba(168,85,247,0.16), 0 16px 50px rgba(168,85,247,0.06), 0 0 0 1px rgba(168,85,247,0.1);
+      border-color: rgba(168,85,247,0.25);
+    }
+    .card.ug-red:hover    { box-shadow: 0 8px 32px rgba(239,68,68,0.22),   0 0 0 1px rgba(239,68,68,0.1); }
+    .card.ug-orange:hover { box-shadow: 0 8px 28px rgba(249,115,22,0.18),  0 0 0 1px rgba(249,115,22,0.08); }
+    .card.ug-green:hover  { box-shadow: 0 8px 28px rgba(16,185,129,0.15),  0 0 0 1px rgba(16,185,129,0.08); }
+
+    .card.overdue { opacity:0.42; }
+    .card.overdue:hover { opacity:0.62; transform:none; }
+
+    @keyframes card-in {
+      from { opacity:0; transform:translateY(7px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .card:nth-child(1){animation-delay:40ms}
+    .card:nth-child(2){animation-delay:80ms}
+    .card:nth-child(3){animation-delay:120ms}
+    .card:nth-child(4){animation-delay:160ms}
+    .card:nth-child(5){animation-delay:200ms}
+    .card:nth-child(6){animation-delay:240ms}
+
+    /* Urgency strips */
+    .strip { width:3px; align-self:stretch; flex-shrink:0; border-radius:1px 0 0 1px; }
+    .strip.red    { background:var(--red);    box-shadow:3px 0 16px rgba(239,68,68,0.75);  animation:red-pulse 2s ease-in-out infinite; }
+    .strip.orange { background:var(--orange); box-shadow:3px 0 12px rgba(249,115,22,0.65); }
+    .strip.green  { background:var(--green);  box-shadow:3px 0 12px rgba(16,185,129,0.6);  }
+    .strip.grey   { background:rgba(255,255,255,0.08); }
+    @keyframes red-pulse {
+      0%,100% { box-shadow:3px 0 12px rgba(239,68,68,0.55); }
+      50%     { box-shadow:3px 0 24px rgba(239,68,68,1), 0 0 10px rgba(239,68,68,0.4); }
+    }
+
+    .card-body { flex:1; padding:12px 10px 12px 14px; min-width:0; }
+    .card-name {
+      font-size:13px; font-weight:500; color:var(--text-1);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      line-height:1.3; letter-spacing:0.005em;
+      /* Subtle white text glow */
+      text-shadow: 0 0 20px rgba(255,255,255,0.08);
+    }
+    .card-course {
+      font-size:10.5px; color:var(--text-3);
+      margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      text-transform:uppercase; letter-spacing:0.06em;
+    }
+    .card.overdue .card-name { text-decoration:line-through; color:var(--text-3); text-shadow:none; }
+
+    .card-right {
+      display:flex; flex-direction:column; align-items:flex-end; justify-content:center;
+      gap:5px; padding:11px 14px 11px 8px; flex-shrink:0;
+    }
+
+    /* Countdown — purple neon glow */
+    .countdown {
+      font-family:var(--fh); font-size:13px; font-weight:600;
+      color:var(--p-bright);
+      text-shadow:
+        0 0 12px var(--p-glow),
+        0 0 24px var(--p-glow-s),
+        0 0 40px rgba(168,85,247,0.2);
+      white-space:nowrap; letter-spacing:0.02em;
+      transition: text-shadow 80ms;
+    }
+    .countdown.urgent {
+      color:#FF6B6B;
+      text-shadow: 0 0 12px rgba(255,107,107,0.85), 0 0 25px rgba(239,68,68,0.45);
+    }
+    .countdown.od { color:var(--text-3); text-shadow:none; font-weight:400; }
+    /* Tick flash brightens glow */
+    .countdown.tick {
+      text-shadow:
+        0 0 18px var(--p-glow),
+        0 0 40px rgba(168,85,247,0.6),
+        0 0 70px rgba(168,85,247,0.25);
+    }
+    .countdown.urgent.tick {
+      text-shadow: 0 0 20px rgba(255,107,107,1), 0 0 45px rgba(239,68,68,0.65);
+    }
+
+    .src { color:rgba(255,255,255,0.15); }
+    .src.canvas { color:rgba(168,85,247,0.35); }
+    .src svg { width:13px; height:13px; display:block; stroke-width:1.7; }
+
+    /* Footer */
+    .ftr {
+      position:sticky; bottom:0; z-index:10;
+      padding:11px 18px;
+      display:flex; align-items:center; justify-content:space-between;
+      background:rgba(0,0,0,0.82);
+      backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+      border-top:1px solid var(--border);
+      box-shadow: 0 -4px 30px rgba(168,85,247,0.07), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .ftr-info {
+      display:flex; align-items:center; gap:8px;
+      font-size:11px; color:var(--text-3); letter-spacing:0.02em;
+    }
+    .pdot {
+      width:5px; height:5px; border-radius:50%;
+      background:var(--green);
+      box-shadow:0 0 8px rgba(16,185,129,0.9);
+      animation:pdot 2.5s ease-in-out infinite;
+    }
+    @keyframes pdot {
+      0%,100%{opacity:1;box-shadow:0 0 7px rgba(16,185,129,0.9);}
+      50%{opacity:0.4;box-shadow:0 0 3px rgba(16,185,129,0.3);}
+    }
+    .ftr-btn {
+      display:flex; align-items:center; gap:5px;
+      padding:5px 11px; background:transparent;
+      border:1px solid var(--border); border-radius:2px;
+      font-family:var(--fb); font-size:11px; font-weight:500;
+      color:var(--text-3); cursor:pointer; letter-spacing:0.04em;
+      transition: all 180ms;
+    }
+    .ftr-btn:hover {
+      border-color:var(--border-hi); color:var(--text-1);
+      background:rgba(255,255,255,0.04);
+      box-shadow:0 4px 18px rgba(168,85,247,0.08);
+    }
+    .ftr-btn svg { width:12px; height:12px; stroke-width:2; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation:none !important; transition:none !important; }
+    }
+    @media (max-width:500px) {
+      body { padding:0 0 48px; }
+      .shell { border-radius:0; border-left:none; border-right:none; min-height:100svh; }
+      .meta { padding:16px 16px 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="meta">
+  <span class="meta-lbl">Design Preview — Select a screen</span>
+  <div class="meta-tabs">
+    <button class="ptab active" onclick="show('setup',this)">Setup Screen</button>
+    <button class="ptab" onclick="show('dash',this)">Dashboard</button>
+  </div>
+</div>
+
+<div class="shell" id="shell">
+  <canvas id="star-canvas"></canvas>
+  <div class="glow-bottom" aria-hidden="true"></div>
+  <div class="glow-top"    aria-hidden="true"></div>
+  <div class="light-bar"   aria-hidden="true"></div>
+  <div class="scan-line"   aria-hidden="true"></div>
+
+  <!-- SETUP -->
+  <div id="s-setup" class="screen active">
+    <div class="logo-wrap">
+      <div class="logo-ring" aria-hidden="true"></div>
+      <div class="logo-inner">
+        <svg viewBox="0 0 26 26" fill="none">
+          <path d="M4 6.5h18M4 12.5h11M4 18.5h14"
+            stroke="rgba(255,255,255,0.65)" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="20.5" cy="18.5" r="4" stroke="#A855F7" stroke-width="1.5" fill="rgba(168,85,247,0.08)"/>
+          <path d="M19.1 18.5l1.2 1.2 2-2.4" stroke="#A855F7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <h1 class="setup-title">Assignment Tracker<span class="dot">.</span></h1>
+    <p class="setup-sub">Connect your Canvas account to track all your upcoming deadlines in one place.</p>
+
+    <div class="setup-card">
+      <div class="f-group">
+        <label class="f-label">Canvas URL</label>
+        <input class="f-input" type="url" value="https://canvas.university.edu" readonly />
+      </div>
+      <div class="f-group">
+        <label class="f-label">API Access Token</label>
+        <input class="f-input focused" type="password" value="7883~xQk8mNpR..." readonly />
+        <p class="f-hint">Stored only on your device. Never shared anywhere.</p>
+      </div>
+      <button class="cta">CONNECT TO CANVAS</button>
+    </div>
+    <a class="token-link" href="#">How do I get an access token? &rarr;</a>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="s-dash" class="screen">
+    <header class="hdr">
+      <div class="wordmark">Tracker<span class="dot">.</span></div>
+      <div class="hdr-r">
+        <button class="icon-btn" aria-label="Sync">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+            <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+          </svg>
+        </button>
+        <button class="add-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Add
+        </button>
+        <button class="icon-btn" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="body">
+      <div class="sec">
+        <span class="sec-lbl od">Overdue</span>
+        <span class="sec-badge od">2</span>
+        <span class="sec-rule"></span>
+      </div>
+      <div class="cards">
+        <div class="card overdue">
+          <div class="strip grey"></div>
+          <div class="card-body">
+            <div class="card-name">Lab Report #3</div>
+            <div class="card-course">BIO 201 — Cellular Biology</div>
+          </div>
+          <div class="card-right">
+            <span class="countdown od">2d ago</span>
+            <span class="src canvas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          </div>
+        </div>
+        <div class="card overdue">
+          <div class="strip grey"></div>
+          <div class="card-body">
+            <div class="card-name">Weekly Reflection Journal</div>
+            <div class="card-course">PSYC 110 — Intro to Psychology</div>
+          </div>
+          <div class="card-right">
+            <span class="countdown od">5d ago</span>
+            <span class="src canvas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <span class="sec-lbl up">Upcoming</span>
+        <span class="sec-badge up">6</span>
+        <span class="sec-rule"></span>
+      </div>
+      <div class="cards">
+        <div class="card ug-red">
+          <div class="strip red"></div>
+          <div class="card-body">
+            <div class="card-name">Midterm Essay — Romanticism</div>
+            <div class="card-course">ENG 310 — British Literature</div>
+          </div>
+          <div class="card-right">
+            <span class="countdown urgent" id="cd0">1d 4h</span>
+            <span class="src canvas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          </div>
+        </div>
+        <div class="card ug-red">
+          <div class="strip red"></div>
+          <div class="card-body">
+            <div class="card-name">Problem Set 7</div>
+            <div class="card-course">MATH 240 — Linear Algebra</div>
+          </div>
+          <div class="card-right">
+            <span class="countdown urgent" id="cd1">2d 11h</span>
+            <span class="src canvas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          </div>
+        </div>
+        <div class="card ug-orange">
+          <div class="strip orange"></div>
+          <div class="card-body">
+            <div class="card-name">Group Presentation Slides</div>
+            <div class="card-course">MGMT 105 — Business Communication</div>
+          </div>
+          <div class="card-right">
+            <span class="countdown" id="cd2">4d 8h</span>
+            <span class="src canvas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          </div>
+        </div>
+        <div class="card ug-orange">
+          <div class="strip orange"></div>
+          <div class="card-body">
+            <div class="card-name">Study for Calc Quiz</div>
+            <div class="card-course">MATH 240 — Linear Algebra</div>
+          </div>
+          <div class="card-right">
+            <span class="countdown" id="cd3">5d 2h</span>
+            <span class="src"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>
+          </div>
+        </div>
+        <div class="card ug-green">
+          <div class="strip green"></div>
+          <div class="card-body">
+            <div class="card-name">Final Project Proposal</div>
+            <div class="card-course">CS 101 — Intro to Computer Science</div>
+          </div>
+          <div class="card-right">
+            <span class="countdown" id="cd4">12d 6h</span>
+            <span class="src canvas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          </div>
+        </div>
+        <div class="card ug-green">
+          <div class="strip green"></div>
+          <div class="card-body">
+            <div class="card-name">Research Paper Outline</div>
+            <div class="card-course">ENG 310 — British Literature</div>
+          </div>
+          <div class="card-right">
+            <span class="countdown" id="cd5">14d 3h</span>
+            <span class="src canvas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="ftr">
+      <div class="ftr-info">
+        <div class="pdot" aria-hidden="true"></div>
+        Last synced 3 min ago
+      </div>
+      <button class="ftr-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+          <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+        </svg>
+        SYNC NOW
+      </button>
+    </footer>
+  </div>
+</div><!-- end shell -->
+
+<script>
+/* ── Screen toggle ── */
+function show(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ═══════════════════════════════════════
+   STARFIELD — glowing, drifting, shooting
+═══════════════════════════════════════ */
+(function () {
+  const shell  = document.getElementById('shell');
+  const canvas = document.getElementById('star-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  canvas.width  = shell.offsetWidth;
+  canvas.height = shell.offsetHeight;
+  const W = canvas.width, H = canvas.height;
+
+  /* ── Regular stars ── */
+  const stars = Array.from({ length: 160 }, () => {
+    const isPurple = Math.random() < 0.22;
+    const isBright = Math.random() < 0.08; // occasional bright star
+    return {
+      x:     Math.random() * W,
+      y:     Math.random() * H,
+      r:     isBright ? 1.4 + Math.random() * 0.8 : 0.3 + Math.random() * 1.0,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.25 + Math.random() * 0.9,
+      base:  isBright ? 0.4 + Math.random() * 0.3 : 0.1 + Math.random() * 0.3,
+      amp:   isBright ? 0.4 + Math.random() * 0.4 : 0.25 + Math.random() * 0.45,
+      /* Slow drift */
+      vx:    (Math.random() - 0.5) * 0.045,
+      vy:    (Math.random() - 0.5) * 0.045,
+      /* Colour */
+      purple: isPurple,
+      bright: isBright,
+    };
+  });
+
+  /* ── Shooting stars ── */
+  const shots = [];
+
+  function scheduleShot() {
+    const delay = 3500 + Math.random() * 8000;
+    setTimeout(() => {
+      shots.push({
+        x: Math.random() * W * 0.65,
+        y: Math.random() * H * 0.5,
+        tx: 0, ty: 0,
+        vx: 2.6 + Math.random() * 3.2,
+        vy: 1.0 + Math.random() * 1.8,
+        maxLen: 65 + Math.random() * 65,
+        done: false,
+        init: false,
+      });
+      scheduleShot();
+    }, delay);
+  }
+  scheduleShot();
+
+  /* ── Draw loop ── */
+  function draw(ts) {
+    const t = ts / 1000;
+    ctx.clearRect(0, 0, W, H);
+
+    /* Stars */
+    stars.forEach(s => {
+      /* Drift + wrap */
+      s.x += s.vx;
+      s.y += s.vy;
+      if (s.x < -3) s.x = W + 3;
+      if (s.x > W + 3) s.x = -3;
+      if (s.y < -3) s.y = H + 3;
+      if (s.y > H + 3) s.y = -3;
+
+      const alpha = Math.max(0, s.base + s.amp * Math.sin(t * s.speed + s.phase));
+
+      /* Radial glow halo — key visual upgrade */
+      const haloR = s.r * (s.purple ? 7 : 5.5);
+      if (alpha > 0.08) {
+        const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, haloR);
+        if (s.purple) {
+          grad.addColorStop(0,   `rgba(192,132,252,${alpha * 0.75})`);
+          grad.addColorStop(0.3, `rgba(168,85,247,${alpha * 0.35})`);
+          grad.addColorStop(0.7, `rgba(124,58,237,${alpha * 0.1})`);
+          grad.addColorStop(1,    'rgba(124,58,237,0)');
+        } else if (s.bright) {
+          grad.addColorStop(0,   `rgba(255,255,255,${alpha * 0.9})`);
+          grad.addColorStop(0.25,`rgba(220,210,255,${alpha * 0.4})`);
+          grad.addColorStop(0.6, `rgba(168,85,247,${alpha * 0.12})`);
+          grad.addColorStop(1,    'rgba(168,85,247,0)');
+        } else {
+          grad.addColorStop(0,   `rgba(255,255,255,${alpha * 0.7})`);
+          grad.addColorStop(0.35,`rgba(255,255,255,${alpha * 0.2})`);
+          grad.addColorStop(1,    'rgba(255,255,255,0)');
+        }
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, haloR, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+
+      /* Star core */
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      if (s.purple) {
+        ctx.fillStyle = `rgba(216,180,254,${alpha})`;
+      } else {
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      }
+      ctx.fill();
+
+      /* Cross-sparkle on bright stars */
+      if (s.bright && alpha > 0.4) {
+        const len = s.r * 3.5 * (alpha - 0.3);
+        ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.5})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(s.x - len, s.y); ctx.lineTo(s.x + len, s.y);
+        ctx.moveTo(s.x, s.y - len); ctx.lineTo(s.x, s.y + len);
+        ctx.stroke();
+      }
+    });
+
+    /* Shooting stars */
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const s = shots[i];
+      if (s.done) { shots.splice(i, 1); continue; }
+      if (!s.init) { s.tx = s.x; s.ty = s.y; s.init = true; }
+
+      s.x += s.vx; s.y += s.vy;
+
+      const dx = s.x - s.tx, dy = s.y - s.ty;
+      if (Math.sqrt(dx * dx + dy * dy) > s.maxLen) {
+        s.tx += s.vx; s.ty += s.vy;
+      }
+      if (s.x > W + 20 || s.y > H + 20) { s.done = true; continue; }
+
+      /* Gradient trail — slight purple tint at tail */
+      const grad = ctx.createLinearGradient(s.tx, s.ty, s.x, s.y);
+      grad.addColorStop(0,   'rgba(168,85,247,0)');
+      grad.addColorStop(0.4, 'rgba(200,150,255,0.12)');
+      grad.addColorStop(0.8, 'rgba(255,255,255,0.55)');
+      grad.addColorStop(1,   'rgba(255,255,255,0.9)');
+      ctx.beginPath();
+      ctx.moveTo(s.tx, s.ty);
+      ctx.lineTo(s.x, s.y);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+
+      /* Bright head */
+      const headGrad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 4);
+      headGrad.addColorStop(0, 'rgba(255,255,255,1)');
+      headGrad.addColorStop(0.4, 'rgba(200,160,255,0.6)');
+      headGrad.addColorStop(1,   'rgba(168,85,247,0)');
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = headGrad;
+      ctx.fill();
+    }
+
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+
+/* ── Countdowns ── */
+const slots = [
+  {d:1,h:4,m:22,s:11},{d:2,h:11,m:5,s:44},{d:4,h:8,m:33,s:2},
+  {d:5,h:2,m:17,s:58},{d:12,h:6,m:49,s:30},{d:14,h:3,m:8,s:22},
+].map((t,i) => ({ ...t, el: document.getElementById('cd'+i) }));
+
+function fmt(t) {
+  if (t.d>0) return t.d+'d '+t.h+'h';
+  if (t.h>0) return t.h+'h '+String(t.m).padStart(2,'0')+'m';
+  return String(t.m).padStart(2,'0')+'m '+String(t.s).padStart(2,'0')+'s';
+}
+
+setInterval(() => {
+  slots.forEach(t => {
+    t.s--;
+    if (t.s<0){t.s=59;t.m--;}
+    if (t.m<0){t.m=59;t.h--;}
+    if (t.h<0){t.h=23;t.d--;}
+    if (!t.el) return;
+    t.el.textContent = fmt(t);
+    t.el.classList.add('tick');
+    setTimeout(() => t.el && t.el.classList.remove('tick'), 120);
+  });
+}, 1000);
+</script>
+</body>
+</html>
